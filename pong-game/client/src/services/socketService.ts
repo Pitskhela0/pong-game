@@ -9,6 +9,13 @@ export interface SocketServiceEvents {
   clientConnected: (data: any) => void;
   clientDisconnected: (data: any) => void;
   pong: (data: any) => void;
+  // Room events
+  roomJoined: (data: any) => void;
+  playerJoined: (data: any) => void;
+  playerLeft: (data: any) => void;
+  roomLeft: (data: any) => void;
+  roomFull: (data: any) => void;
+  roomError: (data: any) => void;
 }
 
 export class SocketService {
@@ -18,7 +25,7 @@ export class SocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private serverUrl: string;
-  private isConnecting = false; // Add flag to prevent multiple connection attempts
+  private isConnecting = false;
 
   constructor(serverUrl: string = 'http://localhost:3001') {
     this.serverUrl = serverUrl;
@@ -36,7 +43,6 @@ export class SocketService {
 
   // Connect to server
   connect(): void {
-    // Prevent multiple simultaneous connection attempts
     if (this.isConnecting) {
       console.log('🔌 Connection already in progress...');
       return;
@@ -55,11 +61,11 @@ export class SocketService {
       transports: ['websocket', 'polling'],
       timeout: 10000,
       forceNew: true,
-      autoConnect: false // Disable auto-connect to have better control
+      autoConnect: false
     });
 
     this.setupEventListeners();
-    this.socket.connect(); // Manually connect
+    this.socket.connect();
   }
 
   // Disconnect from server
@@ -70,7 +76,7 @@ export class SocketService {
       this.socket = null;
       this.setStatus('disconnected');
       this.isConnecting = false;
-      this.reconnectAttempts = 0; // Reset reconnect attempts
+      this.reconnectAttempts = 0;
     }
   }
 
@@ -78,7 +84,7 @@ export class SocketService {
   private setupEventListeners(): void {
     if (!this.socket) return;
 
-    // Connection successful
+    // Connection events
     this.socket.on('connect', () => {
       console.log('✅ Connected to server successfully');
       console.log('🆔 Socket ID:', this.socket?.id);
@@ -87,34 +93,27 @@ export class SocketService {
       this.isConnecting = false;
     });
 
-    // Connection error
     this.socket.on('connect_error', (error) => {
       console.error('❌ Connection error:', error.message);
       this.setStatus('error');
       this.isConnecting = false;
       this.triggerEvent('error', `Connection failed: ${error.message}`);
-      
-      // Handle reconnection attempts
       this.handleReconnection();
     });
 
-    // Disconnected
     this.socket.on('disconnect', (reason) => {
       console.log('🔌 Disconnected from server:', reason);
       this.setStatus('disconnected');
       this.isConnecting = false;
       
-      // Auto-reconnect for certain disconnect reasons
       if (reason === 'io server disconnect') {
-        // Server initiated disconnect - don't reconnect automatically
         this.triggerEvent('error', 'Server disconnected the connection');
       } else if (reason !== 'io client disconnect') {
-        // Client-side issue - attempt reconnection (but not if user manually disconnected)
         this.handleReconnection();
       }
     });
 
-    // Custom server events
+    // Server events
     this.socket.on('welcome', (data) => {
       console.log('👋 Welcome message from server:', data);
       this.triggerEvent('welcome', data);
@@ -133,6 +132,37 @@ export class SocketService {
     this.socket.on('pong', (data) => {
       console.log('🏓 Pong received:', data);
       this.triggerEvent('pong', data);
+    });
+
+    // Room events - these will be handled by the useGameState hook
+    this.socket.on('room-joined', (data) => {
+      console.log('🏠 Room joined:', data);
+      this.triggerEvent('roomJoined', data);
+    });
+
+    this.socket.on('player-joined', (data) => {
+      console.log('👤 Player joined room:', data);
+      this.triggerEvent('playerJoined', data);
+    });
+
+    this.socket.on('player-left', (data) => {
+      console.log('👤 Player left room:', data);
+      this.triggerEvent('playerLeft', data);
+    });
+
+    this.socket.on('room-left', (data) => {
+      console.log('🚪 Left room:', data);
+      this.triggerEvent('roomLeft', data);
+    });
+
+    this.socket.on('room-full', (data) => {
+      console.log('🚫 Room full:', data);
+      this.triggerEvent('roomFull', data);
+    });
+
+    this.socket.on('room-error', (data) => {
+      console.log('❌ Room error:', data);
+      this.triggerEvent('roomError', data);
     });
   }
 
@@ -193,6 +223,25 @@ export class SocketService {
       });
     } else {
       console.warn('⚠️ Cannot send ping - not connected to server');
+    }
+  }
+
+  // Room management methods
+  joinRoom(roomName: string, playerName: string): void {
+    if (this.socket?.connected) {
+      console.log('🏠 Joining room:', { roomName, playerName });
+      this.socket.emit('join-room', { roomName, playerName });
+    } else {
+      console.warn('⚠️ Cannot join room - not connected to server');
+    }
+  }
+
+  leaveRoom(): void {
+    if (this.socket?.connected) {
+      console.log('🚪 Leaving room');
+      this.socket.emit('leave-room');
+    } else {
+      console.warn('⚠️ Cannot leave room - not connected to server');
     }
   }
 }
