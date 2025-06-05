@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { SocketHandler } from './socket/socketHandler';
 
 const app = express();
 const server = createServer(app);
@@ -23,6 +24,9 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3001;
+
+// Create socket handler instance
+const socketHandler = new SocketHandler(io);
 
 // Basic middleware
 app.use(express.json());
@@ -72,6 +76,12 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Room statistics endpoint
+app.get('/api/stats', (req, res) => {
+  const stats = socketHandler.getRoomStats();
+  res.json(stats);
+});
+
 // Socket.IO connection handling with enhanced logging
 io.on('connection', (socket) => {
   console.log(`🔌 New client connected: ${socket.id}`);
@@ -91,63 +101,8 @@ io.on('connection', (socket) => {
     transport: socket.conn.transport.name
   });
   
-  // Handle ping for testing
-  socket.on('ping', (data) => {
-    console.log(`🏓 Ping received from ${socket.id}:`, data);
-    socket.emit('pong', {
-      message: 'Pong from server!',
-      originalMessage: data.message,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Handle join room (simplified for debugging)
-  socket.on('join-room', (data: { roomName: string; playerName: string }) => {
-    console.log(`🏠 Join room request from ${socket.id}:`, data);
-    
-    try {
-      // Simple room join without RoomManager for now
-      socket.join(data.roomName);
-      
-      socket.emit('room-joined', {
-        room: {
-          id: `room_${data.roomName}`,
-          name: data.roomName,
-          gameState: {
-            id: `game_${data.roomName}`,
-            players: [{
-              id: socket.id,
-              socketId: socket.id,
-              paddleY: 250,
-              score: 0,
-              isReady: false
-            }],
-            ball: { x: 400, y: 300, velocityX: 5, velocityY: 3, speed: 5 },
-            gameStatus: 'waiting',
-            winner: null,
-            lastUpdate: Date.now()
-          },
-          createdAt: Date.now()
-        },
-        playerId: socket.id,
-        playerName: data.playerName
-      });
-
-      console.log(`✅ Player ${data.playerName} joined room ${data.roomName}`);
-      
-    } catch (error) {
-      console.error('❌ Error joining room:', error);
-      socket.emit('room-error', {
-        message: 'Failed to join room'
-      });
-    }
-  });
-
-  // Handle leave room
-  socket.on('leave-room', () => {
-    console.log(`🚪 Leave room request from ${socket.id}`);
-    socket.emit('room-left', { roomName: 'test' });
-  });
+  // Setup all socket handlers using SocketHandler class
+  socketHandler.setupSocketHandlers(socket);
   
   // Broadcast client connected to all other clients
   socket.broadcast.emit('clientConnected', {
@@ -222,7 +177,8 @@ server.listen(PORT, () => {
   console.log(`🔧 Available endpoints:`);
   console.log(`   📍 GET  /           - Health check`);
   console.log(`   📍 GET  /api/test   - Test endpoint`);
-  console.log(`🔍 Debug mode: Simplified room management for testing`);
+  console.log(`   📍 GET  /api/stats  - Room statistics`);
+  console.log(`🎮 Using SocketHandler for room management`);
 }).on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`❌ Port ${PORT} is already in use!`);

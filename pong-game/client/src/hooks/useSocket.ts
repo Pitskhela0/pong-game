@@ -15,14 +15,18 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [error, setError] = useState<string | null>(null);
   const socketServiceRef = useRef<SocketService | null>(null);
-  const isInitializedRef = useRef(false);
 
   // Initialize socket service only once
   useEffect(() => {
-    // Prevent double initialization in React StrictMode
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
+    console.log('🔧 useSocket effect running...');
+    
+    // If we already have a socket service, don't create another one
+    if (socketServiceRef.current) {
+      console.log('🔧 Socket service already exists, reusing...');
+      return;
+    }
 
+    console.log('🔧 Creating new socket service...');
     const socketService = new SocketService(serverUrl);
     socketServiceRef.current = socketService;
 
@@ -52,24 +56,23 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
       console.log('📉 Client count updated:', data.totalClients);
     });
 
-    // Cleanup function
+    // Cleanup function - only runs when component actually unmounts
     return () => {
-      console.log('🧹 Cleaning up socket service');
-      socketService.disconnect();
-      socketService.off('statusChange');
-      socketService.off('error');
-      socketService.off('welcome');
-      socketService.off('clientConnected');
-      socketService.off('clientDisconnected');
-      isInitializedRef.current = false;
+      console.log('🧹 useSocket cleanup - component unmounting');
+      if (socketServiceRef.current) {
+        socketServiceRef.current.destroy();
+        socketServiceRef.current = null;
+      }
     };
-  }, [serverUrl]);
+  }, []); // No dependencies to prevent re-running
 
   // Memoize connect function to prevent unnecessary re-renders
   const connect = useCallback(() => {
     console.log('🔌 Connect function called');
     if (socketServiceRef.current) {
       socketServiceRef.current.connect();
+    } else {
+      console.warn('⚠️ SocketService not available');
     }
   }, []);
 
