@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
     }
   };
   
-  console.log('📊 HTTP Health check requested, responding with:', response);
+  console.log('HTTP Health check requested, responding with:', response);
   res.json(response);
 });
 
@@ -84,9 +84,9 @@ app.get('/api/stats', (req, res) => {
 
 // Socket.IO connection handling with enhanced logging
 io.on('connection', (socket) => {
-  console.log(`🔌 New client connected: ${socket.id}`);
-  console.log(`📊 Total connected clients: ${io.engine.clientsCount}`);
-  console.log(`🔍 Client info:`, {
+  console.log(`New client connected: ${socket.id}`);
+  console.log(`Total connected clients: ${io.engine.clientsCount}`);
+  console.log(`Client info:`, {
     id: socket.id,
     transport: socket.conn.transport.name,
     upgraded: socket.conn.upgraded,
@@ -117,9 +117,9 @@ io.on('connection', (socket) => {
   
   // Handle disconnect
   socket.on('disconnect', (reason) => {
-    console.log(`🔌 Client disconnected: ${socket.id}`);
-    console.log(`📊 Disconnect reason: ${reason}`);
-    console.log(`📊 Remaining clients: ${io.engine.clientsCount}`);
+    console.log(`Client disconnected: ${socket.id}`);
+    console.log(`Disconnect reason: ${reason}`);
+    console.log(`Remaining clients: ${io.engine.clientsCount}`);
     
     // Broadcast client disconnected to all other clients
     socket.broadcast.emit('clientDisconnected', {
@@ -154,7 +154,7 @@ process.on('SIGINT', () => {
     if (err) {
       console.error('❌ Error closing Socket.IO server:', err);
     } else {
-      console.log('✅ Socket.IO server closed successfully');
+      console.log('Socket.IO server closed successfully');
     }
     
     server.close((err) => {
@@ -162,7 +162,7 @@ process.on('SIGINT', () => {
         console.error('❌ Error closing HTTP server:', err);
         process.exit(1);
       } else {
-        console.log('✅ HTTP server closed successfully');
+        console.log('HTTP server closed successfully');
         process.exit(0);
       }
     });

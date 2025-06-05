@@ -1,0 +1,370 @@
+/* Game Area Styling */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.game-area {
+  position: relative;
+  width: 800px;
+  height: 400px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 3px solid #3b82f6;
+  border-radius: 8px;
+  margin: 0 auto;
+  cursor: none; /* Hide cursor for immersive experience */
+  overflow: hidden;
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.3),
+    inset 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+.game-area:hover {
+  box-shadow: 
+    0 0 30px rgba(59, 130, 246, 0.5),
+    inset 0 0 25px rgba(59, 130, 246, 0.15);
+}
+
+/* Game Boundaries */
+.game-area::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 10%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.3) 90%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Add dashed center line effect */
+.game-area::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.4) 0px,
+    rgba(255, 255, 255, 0.4) 15px,
+    transparent 15px,
+    transparent 25px
+  );
+  pointer-events: none;
+}
+
+/* Paddle Styling */
+.paddle {
+  position: absolute;
+  width: 15px;
+  height: 80px;
+  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  border-radius: 7.5px;
+  transition: top 0.05s ease-out;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+/* Ball Styling */
+.ball {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #d0d0d0 100%);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.2),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.8);
+  transition: all 0.016s linear;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ball--with-trail {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+}
+
+.ball-trail {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 70%, transparent 100%);
+  transform: scale(1.5);
+  opacity: 0.4;
+  z-index: 9;
+  pointer-events: none;
+  transition: all 0.016s linear;
+}
+
+/* Player 1 (Left) Paddle */
+.paddle--player1 {
+  left: 30px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 
+    0 2px 8px rgba(59, 130, 246, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Player 2 (Right) Paddle */
+.paddle--player2 {
+  right: 30px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 
+    0 2px 8px rgba(239, 68, 68, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Current Player Paddle Highlight */
+.paddle--current {
+  box-shadow: 
+    0 0 15px rgba(34, 197, 94, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 0 15px rgba(34, 197, 94, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 20px rgba(34, 197, 94, 0.8),
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes scoreFlash {
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+  50% {
+    transform: scale(1.2);
+    color: #22c55e;
+    text-shadow: 0 0 20px currentColor;
+  }
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+}
+
+/* Game End Screen Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes celebration {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-40px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Game End Modal Styles */
+.game-end-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.game-end-modal {
+  background-color: #1a1a1a;
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 400px;
+  max-width: 600px;
+  border: 2px solid #374151;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.4s ease-out;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Game Status Overlay */
+.game-status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Game Status Overlay */
+.game-status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 5;
+}
+
+/* Score Display */
+.score-display {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.score-display .player1-score {
+  color: #3b82f6;
+}
+
+.score-display .player2-score {
+  color: #ef4444;
+}
+
+/* Mouse Position Debug (only shown in debug mode) */
+.mouse-debug {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  pointer-events: none;
+}
+
+/* Responsive Game Area */
+@media (max-width: 900px) {
+  .game-area {
+    width: 90vw;
+    height: calc(90vw * 0.5); /* Maintain 2:1 aspect ratio */
+    max-width: 800px;
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-area {
+    width: 95vw;
+    height: calc(95vw * 0.5);
+  }
+  
+  .paddle {
+    width: 12px;
+    height: 60px;
+  }
+  
+  .paddle--player1 {
+    left: 20px;
+  }
+  
+  .paddle--player2 {
+    right: 20px;
+  }
+}
+
+/* Game Waiting State */
+.game-area--waiting {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.game-area--waiting::before {
+  content: 'Waiting for players...';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  z-index: 10;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

@@ -18,7 +18,7 @@ export class RoomManager {
     };
 
     this.rooms.set(roomName, room);
-    console.log(`🏠 Room "${roomName}" created with ID: ${room.id}`);
+    console.log(`Room "${roomName}" created with ID: ${room.id}`);
     return room;
   }
 
@@ -92,7 +92,7 @@ export class RoomManager {
       // Clean up empty room
       if (room.gameState.players.length === 0) {
         this.rooms.delete(room.name);
-        console.log(`🏠 Empty room "${room.name}" cleaned up`);
+        console.log(`Empty room "${room.name}" cleaned up`);
         return null;
       }
     }
@@ -123,7 +123,7 @@ export class RoomManager {
       if (room.gameState.players.length === 0) {
         this.rooms.delete(roomName);
         cleanedCount++;
-        console.log(`🧹 Cleaned up empty room "${roomName}"`);
+        console.log(`Cleaned up empty room "${roomName}"`);
       }
     }
     return cleanedCount;

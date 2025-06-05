@@ -3,6 +3,7 @@ import { useSocket } from './hooks/useSocket';
 import { useGameState } from './hooks/useGameState';
 import Lobby from './components/Lobby';
 import GameArea from './components/GameArea';
+import GameEndScreen from './components/GameEndScreen';
 
 function App() {
   const { 
@@ -107,7 +108,10 @@ function App() {
             players={gameState.players}
             currentPlayer={gameState.currentPlayer}
             gameStatus={gameState.gameStatus}
+            ball={gameState.ball}
+            winnerId={gameState.winnerId}
             onPaddleMove={gameState.movePaddle}
+            onToggleReady={gameState.setPlayerReady}
             showDebug={import.meta.env.DEV}
           />
         ) : (
@@ -115,6 +119,16 @@ function App() {
         )}
       </div>
 
+      {/* Game End Screen Modal */}
+      <GameEndScreen
+        isOpen={gameState.gameStatus === 'finished' && gameState.isInRoom}
+        players={gameState.players}
+        currentPlayer={gameState.currentPlayer}
+        winnerId={gameState.winnerId}
+        onReturnToLobby={gameState.returnToLobby}
+        onPlayAgain={() => gameState.setPlayerReady(true)}
+      />
+          
       {/* Debug/Control Panel - Only show when connected */}
       {isConnected && (
         <div style={{
@@ -221,6 +235,7 @@ function App() {
                 <div>Room Name: {gameState.currentRoom?.name}</div>
                 <div>Players: {gameState.players.length}/2</div>
                 <div>Status: {gameState.gameStatus}</div>
+                <div>Winner: {gameState.winnerId || 'None'}</div>
                 <div>Current Player ID: {gameState.currentPlayer?.id}</div>
                 <div>Players Paddle Positions:</div>
                 {gameState.players.map((player, index) => (

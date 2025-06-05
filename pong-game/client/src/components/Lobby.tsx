@@ -216,7 +216,7 @@ const Lobby: React.FC<LobbyProps> = ({ gameState, isConnected }) => {
           color: '#dc2626',
           textAlign: 'center'
         }}>
-          <p style={{ margin: 0, fontWeight: 'bold' }}>❌ {error}</p>
+          <p style={{ margin: 0, fontWeight: 'bold' }}> {error}</p>
           <button
             onClick={clearError}
             style={{
@@ -342,7 +342,7 @@ const Lobby: React.FC<LobbyProps> = ({ gameState, isConnected }) => {
           transition: 'all 0.2s ease'
         }}
       >
-        {isLoading ? '🔄 Joining...' : '🚀 Join Room'}
+        {isLoading ? 'Joining...' : 'Join Room'}
       </button>
 
       {/* Instructions */}

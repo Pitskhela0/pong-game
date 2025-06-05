@@ -1,7 +1,9 @@
 import React, { useCallback } from 'react';
 import { useMouse } from '../hooks/useMouse';
 import Paddle from './Paddle';
-import type { Player, GameStatus } from '../types/index';
+import Ball from './Ball';
+import ScoreBoard from './ScoreBoard';
+import type { Player, GameStatus, Ball as BallType } from '../types/index';
 import '../styles/Game.css';
 
 export interface GameAreaProps {
@@ -11,12 +13,18 @@ export interface GameAreaProps {
   currentPlayer: Player | null;
   /** Current game status */
   gameStatus: GameStatus;
+  /** Ball state */
+  ball: BallType | null;
+  /** Winner ID if game finished */
+  winnerId?: string | null;
   /** Game area width in pixels */
   width?: number;
   /** Game area height in pixels */
   height?: number;
   /** Callback when paddle position changes */
   onPaddleMove?: (paddleY: number) => void;
+  /** Callback when player toggles ready state */
+  onToggleReady?: (isReady: boolean) => void;
   /** Whether to show debug information */
   showDebug?: boolean;
 }
@@ -25,9 +33,12 @@ const GameArea: React.FC<GameAreaProps> = ({
   players,
   currentPlayer,
   gameStatus,
+  ball,
+  winnerId,
   width = 800,
   height = 400,
   onPaddleMove,
+  onToggleReady,
   showDebug = false
 }) => {
   const paddleHeight = 80;
@@ -36,7 +47,7 @@ const GameArea: React.FC<GameAreaProps> = ({
   const { mousePosition, handleMouseMove, resetPosition } = useMouse({
     gameAreaHeight: height,
     paddleHeight,
-    throttleMs: 16, // ~60fps
+    throttleMs: 16, // 60fps
     onPaddleMove: useCallback((paddleY: number) => {
       if (gameStatus === 'ready' || gameStatus === 'playing') {
         onPaddleMove?.(paddleY);
@@ -70,44 +81,47 @@ const GameArea: React.FC<GameAreaProps> = ({
     height: `${height}px`
   };
 
-  // Get game status text
-  const getStatusText = (): string => {
-    switch (gameStatus) {
-      case 'waiting':
-        return 'Waiting for players...';
-      case 'ready':
-        return 'Ready to play!';
-      case 'playing':
-        return 'Game in progress';
-      case 'paused':
-        return 'Game paused';
-      case 'finished':
-        return 'Game finished';
-      default:
-        return 'Unknown status';
-    }
+  // Get status text for overlay
+  const getStatusOverlayText = (): string => {
+    if (gameStatus === 'playing') return 'Game in progress';
+    if (gameStatus === 'paused') return 'Game paused';
+    return '';
   };
 
   return (
     <div className="game-container">
+      {/* ScoreBoard */}
+      <ScoreBoard
+        players={players}
+        currentPlayer={currentPlayer}
+        gameStatus={gameStatus}
+        winnerId={winnerId}
+        onToggleReady={onToggleReady}
+        showReadyState={gameStatus === 'ready' || gameStatus === 'waiting' || gameStatus === 'finished'}
+      />
+
       <div
         className={gameAreaClasses}
         style={gameAreaStyles}
         onMouseMove={handleMouseMove}
         onMouseLeave={resetPosition}
       >
-        {/* Game Status Overlay */}
-        <div className="game-status">
-          {getStatusText()}
-        </div>
-
-        {/* Score Display */}
-        {player1 && player2 && (
-          <div className="score-display">
-            <span className="player1-score">{player1.score}</span>
-            <span>:</span>
-            <span className="player2-score">{player2.score}</span>
+        {(gameStatus === 'playing' || gameStatus === 'paused') && (
+          <div className="game-status">
+            {getStatusOverlayText()}
           </div>
+        )
+        }
+
+
+
+        {ball && (gameStatus === 'playing' || gameStatus === 'paused') && (
+          <Ball
+            x={ball.x}
+            y={ball.y}
+            size={15}
+            showTrail={gameStatus === 'playing'}
+          />
         )}
 
         {/* Player 1 Paddle (Left) */}
@@ -136,7 +150,14 @@ const GameArea: React.FC<GameAreaProps> = ({
             Mouse: ({Math.round(mousePosition.x)}, {Math.round(mousePosition.y)})<br/>
             Paddle Y: {Math.round(mousePosition.paddleY)}<br/>
             In Bounds: {mousePosition.isInBounds ? 'Yes' : 'No'}<br/>
-            Current Player: {currentPlayer?.id || 'None'}
+            Current Player: {currentPlayer?.id || 'None'}<br/>
+            {ball && (
+              <>
+                Ball: ({Math.round(ball.x)}, {Math.round(ball.y)})<br/>
+                Ball Speed: {Math.round(ball.speed)}px/s<br/>
+                Ball Velocity: ({Math.round(ball.velocityX)}, {Math.round(ball.velocityY)})
+              </>
+            )}
           </div>
         )}
       </div>
@@ -151,12 +172,25 @@ const GameArea: React.FC<GameAreaProps> = ({
         {gameStatus === 'waiting' && (
           <p>Waiting for another player to join the room...</p>
         )}
-        {(gameStatus === 'ready' || gameStatus === 'playing') && currentPlayer && (
+        {gameStatus === 'ready' && players.length === 2 && (
+          <p>
+            Both players ready! Move your mouse over the game area to control your paddle.
+            You are the <strong style={{ color: players[0]?.id === currentPlayer?.id ? '#3b82f6' : '#ef4444' }}>
+              {players[0]?.id === currentPlayer?.id ? 'blue (left)' : 'red (right)'}
+            </strong> paddle.
+          </p>
+        )}
+        {(gameStatus === 'playing' || gameStatus === 'paused') && currentPlayer && (
           <p>
             Move your mouse over the game area to control your paddle. 
-            You are the <strong style={{ color: players[0]?.id === currentPlayer.id ? '#3b82f6' : '#ef4444' }}>
-              {players[0]?.id === currentPlayer.id ? 'blue' : 'red'}
+            You are the <strong style={{ color: players[0]?.id === currentPlayer?.id ? '#3b82f6' : '#ef4444' }}>
+              {players[0]?.id === currentPlayer?.id ? 'blue (left)' : 'red (right)'}
             </strong> paddle.
+          </p>
+        )}
+        {gameStatus === 'finished' && (
+          <p style={{ color: '#22c55e', fontWeight: 'bold' }}>
+            🎉 Game finished! {winnerId === currentPlayer?.id ? 'Congratulations!' : 'Better luck next time!'}
           </p>
         )}
       </div>

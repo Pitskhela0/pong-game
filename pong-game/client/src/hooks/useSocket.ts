@@ -18,21 +18,21 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
   // Initialize socket service only once
   useEffect(() => {
-    console.log('🔧 useSocket effect running...');
+    console.log('useSocket effect running...');
     
     // If we already have a socket service, don't create another one
     if (socketServiceRef.current) {
-      console.log('🔧 Socket service already exists, reusing...');
+      console.log('Socket service already exists, reusing...');
       return;
     }
 
-    console.log('🔧 Creating new socket service...');
+    console.log('Creating new socket service...');
     const socketService = new SocketService(serverUrl);
     socketServiceRef.current = socketService;
 
     // Setup event listeners
     socketService.on('statusChange', (status) => {
-      console.log('🔄 Status changed to:', status);
+      console.log('Status changed to:', status);
       setConnectionStatus(status);
       if (status === 'connected') {
         setError(null); // Clear errors on successful connection
@@ -45,15 +45,15 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
     });
 
     socketService.on('welcome', (data) => {
-      console.log('🎉 Welcome data:', data);
+      console.log('Welcome data:', data);
     });
 
     socketService.on('clientConnected', (data) => {
-      console.log('📈 Client count updated:', data.totalClients);
+      console.log('Client count updated:', data.totalClients);
     });
 
     socketService.on('clientDisconnected', (data) => {
-      console.log('📉 Client count updated:', data.totalClients);
+      console.log('Client count updated:', data.totalClients);
     });
 
     socketService.on('paddleMoved', (data) => {
@@ -62,7 +62,7 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
     // Cleanup function - only runs when component actually unmounts
     return () => {
-      console.log('🧹 useSocket cleanup - component unmounting');
+      console.log('useSocket cleanup - component unmounting');
       if (socketServiceRef.current) {
         socketServiceRef.current.destroy();
         socketServiceRef.current = null;
@@ -72,17 +72,17 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
 
   // Memoize connect function to prevent unnecessary re-renders
   const connect = useCallback(() => {
-    console.log('🔌 Connect function called');
+    console.log('Connect function called');
     if (socketServiceRef.current) {
       socketServiceRef.current.connect();
     } else {
-      console.warn('⚠️ SocketService not available');
+      console.warn('SocketService not available');
     }
   }, []);
 
   // Memoize disconnect function
   const disconnect = useCallback(() => {
-    console.log('🔌 Disconnect function called');
+    console.log('Disconnect function called');
     if (socketServiceRef.current) {
       socketServiceRef.current.disconnect();
     }

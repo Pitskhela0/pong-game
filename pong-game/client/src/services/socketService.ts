@@ -18,6 +18,11 @@ export interface SocketServiceEvents {
   roomError: (data: any) => void;
   // Game events
   paddleMoved: (data: any) => void;
+  gameStateUpdate: (data: any) => void;
+  pointScored: (data: any) => void;
+  gameEnded: (data: any) => void;
+  playerReadyUpdate: (data: any) => void;
+  returnedToLobby: (data: any) => void;
 }
 
 export class SocketService {
@@ -28,7 +33,7 @@ export class SocketService {
   private maxReconnectAttempts = 3;
   private serverUrl: string;
   private isConnecting = false;
-private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isDestroyed = false;
 
   constructor(serverUrl: string = 'http://localhost:3001') {
@@ -53,17 +58,17 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     }
 
     if (this.isConnecting) {
-      console.log('🔌 Connection already in progress...');
+      console.log('Connection already in progress...');
       return;
     }
 
     if (this.socket?.connected) {
-      console.log('🔌 Already connected to server');
+      console.log('Already connected to server');
       return;
     }
 
-    console.log(`🔌 Connecting to server at ${this.serverUrl}...`);
-    console.log('🔧 Using polling transport only for debugging');
+    console.log(`Connecting to server at ${this.serverUrl}...`);
+    console.log('Using polling transport only for debugging');
     this.isConnecting = true;
     this.setStatus('connecting');
 
@@ -108,7 +113,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       });
       
       // Manual connect
-      console.log('🔌 Attempting to connect...');
+      console.log('Attempting to connect...');
       this.socket.connect();
     } catch (error) {
       clearTimeout(connectionTimeout);
@@ -127,7 +132,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     }
 
     if (this.socket) {
-      console.log('🔌 Disconnecting from server...');
+      console.log('Disconnecting from server...');
       this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
@@ -139,7 +144,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Destroy the service (for cleanup)
   destroy(): void {
-    console.log('🧹 Destroying SocketService...');
+    console.log('Destroying SocketService...');
     this.isDestroyed = true;
     this.disconnect();
     this.eventListeners = {};
@@ -149,7 +154,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private setupEventListeners(): void {
     if (!this.socket || this.isDestroyed) return;
 
-    console.log('🔧 Setting up socket event listeners...');
+    console.log('Setting up socket event listeners...');
 
     // Connection events
     this.socket.on('connect', () => {
@@ -161,8 +166,8 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       // Safely access transport info
       try {
         if (this.socket?.io?.engine) {
-          console.log('🚗 Transport:', this.socket.io.engine.transport.name);
-          console.log('🔧 Transport readyState:', this.socket.io.engine.readyState);
+          console.log('Transport:', this.socket.io.engine.transport.name);
+          console.log('Transport readyState:', this.socket.io.engine.readyState);
         }
       } catch (error) {
         console.warn('⚠️ Could not access transport info:', error);
@@ -208,7 +213,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       if (reason === 'io server disconnect') {
         this.triggerEvent('error', 'Server disconnected the connection');
       } else if (reason !== 'io client disconnect') {
-        console.log('🔄 Unexpected disconnect, attempting to reconnect...');
+        console.log('Unexpected disconnect, attempting to reconnect...');
         this.handleReconnection();
       }
     });
@@ -240,19 +245,19 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     // Server events
     this.socket.on('welcome', (data) => {
       if (this.isDestroyed) return;
-      console.log('👋 Welcome message from server:', data);
+      console.log('Welcome message from server:', data);
       this.triggerEvent('welcome', data);
     });
 
     this.socket.on('clientConnected', (data) => {
       if (this.isDestroyed) return;
-      console.log('👤 Another client connected:', data);
+      console.log('Another client connected:', data);
       this.triggerEvent('clientConnected', data);
     });
 
     this.socket.on('clientDisconnected', (data) => {
       if (this.isDestroyed) return;
-      console.log('👤 Client disconnected:', data);
+      console.log('Client disconnected:', data);
       this.triggerEvent('clientDisconnected', data);
     });
 
@@ -265,7 +270,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     // Room events
     this.socket.on('room-joined', (data) => {
       if (this.isDestroyed) return;
-      console.log('🏠 Room joined:', data);
+      console.log('Room joined:', data);
       this.triggerEvent('roomJoined', data);
     });
 
@@ -283,7 +288,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     this.socket.on('room-left', (data) => {
       if (this.isDestroyed) return;
-      console.log('🚪 Left room:', data);
+      console.log('Left room:', data);
       this.triggerEvent('roomLeft', data);
     });
 
@@ -305,31 +310,60 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       console.log('🏓 Paddle moved:', data);
       this.triggerEvent('paddleMoved', data);
     });
+
+    this.socket.on('game-state-update', (data) => {
+      if (this.isDestroyed) return;
+      this.triggerEvent('gameStateUpdate', data);
+    });
+
+    this.socket.on('point-scored', (data) => {
+      if (this.isDestroyed) return;
+      console.log('Point scored:', data);
+      this.triggerEvent('pointScored', data);
+    });
+
+    this.socket.on('game-ended', (data) => {
+      if (this.isDestroyed) return;
+      console.log('🏆 Game ended:', data);
+      this.triggerEvent('gameEnded', data);
+    });
+
+    this.socket.on('player-ready-update', (data) => {
+      if (this.isDestroyed) return;
+      console.log('Player ready update:', data);
+      this.triggerEvent('playerReadyUpdate', data);
+    });
+
+    this.socket.on('returned-to-lobby', (data) => {
+      if (this.isDestroyed) return;
+      console.log('Returned to lobby:', data);
+      this.triggerEvent('returnedToLobby', data);
+    });
   }
 
   private setupEngineEvents(): void {
     if (!this.socket?.io?.engine || this.isDestroyed) return;
 
-    console.log('🔧 Setting up engine events...');
+    console.log('Setting up engine events...');
 
     this.socket.io.engine.on('open', () => {
       if (this.isDestroyed) return;
-      console.log('🔧 Engine opened');
+      console.log('Engine opened');
     });
 
     this.socket.io.engine.on('close', (reason) => {
       if (this.isDestroyed) return;
-      console.log('🔧 Engine closed:', reason);
+      console.log('Engine closed:', reason);
     });
 
     this.socket.io.engine.on('error', (error) => {
       if (this.isDestroyed) return;
-      console.error('🔧 Engine error:', error);
+      console.error('Engine error:', error);
     });
 
     this.socket.io.engine.on('upgradeError', (error) => {
       if (this.isDestroyed) return;
-      console.error('🔧 Engine upgrade error:', error);
+      console.error('Engine upgrade error:', error);
     });
   }
 
@@ -341,7 +375,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       this.reconnectAttempts++;
       const delay = Math.min(2000 * this.reconnectAttempts, 10000);
       
-      console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       
       this.reconnectTimer = setTimeout(() => {
         if (!this.isDestroyed && this.status !== 'connected' && !this.isConnecting) {
@@ -359,7 +393,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     if (this.isDestroyed) return;
     
     if (this.status !== status) {
-      console.log(`📊 Status changing from ${this.status} to ${status}`);
+      console.log(`Status changing from ${this.status} to ${status}`);
       this.status = status;
       this.triggerEvent('statusChange', status);
     }
@@ -407,7 +441,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     if (this.isDestroyed) return;
     
     if (this.socket?.connected) {
-      console.log('🏠 Joining room:', { roomName, playerName });
+      console.log('Joining room:', { roomName, playerName });
       this.socket.emit('join-room', { roomName, playerName });
     } else {
       console.warn('⚠️ Cannot join room - not connected to server');
@@ -418,7 +452,7 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     if (this.isDestroyed) return;
     
     if (this.socket?.connected) {
-      console.log('🚪 Leaving room');
+      console.log('Leaving room');
       this.socket.emit('leave-room');
     } else {
       console.warn('⚠️ Cannot leave room - not connected to server');
@@ -433,6 +467,30 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       this.socket.emit('paddle-move', { paddleY });
     } else {
       console.warn('⚠️ Cannot move paddle - not connected to server');
+    }
+  }
+
+  // Player ready toggle
+  setPlayerReady(isReady: boolean): void {
+    if (this.isDestroyed) return;
+    
+    if (this.socket?.connected) {
+      console.log(`Setting player ready: ${isReady}`);
+      this.socket.emit('player-ready', { isReady });
+    } else {
+      console.warn('⚠️ Cannot set ready state - not connected to server');
+    }
+  }
+
+  // Return to lobby
+  returnToLobby(): void {
+    if (this.isDestroyed) return;
+    
+    if (this.socket?.connected) {
+      console.log('Returning to lobby');
+      this.socket.emit('return-to-lobby');
+    } else {
+      console.warn('⚠️ Cannot return to lobby - not connected to server');
     }
   }
 }
