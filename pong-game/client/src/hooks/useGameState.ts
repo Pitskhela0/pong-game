@@ -16,6 +16,7 @@ export interface UseGameStateReturn extends GameStateData {
   joinRoom: (roomName: string, playerName: string) => void;
   leaveRoom: () => void;
   clearError: () => void;
+  movePaddle: (paddleY: number) => void;
 }
 
 export const useGameState = (socketService: SocketService | null): UseGameStateReturn => {
@@ -93,6 +94,40 @@ export const useGameState = (socketService: SocketService | null): UseGameStateR
       setIsLoading(false);
     });
 
+    // Handle paddle movement from other players
+    socket.on('paddle-moved', (data: { playerId: string; paddleY: number; timestamp: number }) => {
+      console.log('🏓 Other player paddle moved:', data);
+      
+      // Update the specific player's paddle position
+      setPlayers(prevPlayers => 
+        prevPlayers.map(player => 
+          player.id === data.playerId 
+            ? { ...player, paddleY: data.paddleY }
+            : player
+        )
+      );
+
+      // Also update the room state if available
+      setCurrentRoom(prevRoom => {
+        if (!prevRoom) return prevRoom;
+        
+        const updatedPlayers = prevRoom.gameState.players.map(player =>
+          player.id === data.playerId
+            ? { ...player, paddleY: data.paddleY }
+            : player
+        );
+
+        return {
+          ...prevRoom,
+          gameState: {
+            ...prevRoom.gameState,
+            players: updatedPlayers,
+            lastUpdate: data.timestamp
+          }
+        };
+      });
+    });
+
     // Cleanup function
     return () => {
       socket.off('room-joined');
@@ -101,6 +136,7 @@ export const useGameState = (socketService: SocketService | null): UseGameStateR
       socket.off('room-left');
       socket.off('room-full');
       socket.off('room-error');
+      socket.off('paddle-moved');
     };
   }, [socketService, currentPlayer?.id]);
 
@@ -154,6 +190,16 @@ export const useGameState = (socketService: SocketService | null): UseGameStateR
     socket.emit('leave-room');
   }, [socketService]);
 
+  // Move paddle function
+  const movePaddle = useCallback((paddleY: number) => {
+    if (!socketService) {
+      console.warn('⚠️ Socket service not available for paddle move');
+      return;
+    }
+
+    socketService.movePaddle(paddleY);
+  }, [socketService]);
+
   // Clear error function
   const clearError = useCallback(() => {
     setError(null);
@@ -169,6 +215,7 @@ export const useGameState = (socketService: SocketService | null): UseGameStateR
     isLoading,
     joinRoom,
     leaveRoom,
-    clearError
+    clearError,
+    movePaddle
   };
 };

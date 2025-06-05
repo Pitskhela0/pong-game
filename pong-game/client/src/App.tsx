@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { useGameState } from './hooks/useGameState';
 import Lobby from './components/Lobby';
+import GameArea from './components/GameArea';
 
 function App() {
   const { 
@@ -91,15 +92,27 @@ function App() {
         )}
       </div>
 
-      {/* Main Game Area - Show Lobby */}
+      {/* Main Game Content */}
       <div style={{
         width: '100%',
-        maxWidth: '800px',
+        maxWidth: '1000px',
         display: 'flex',
-        justifyContent: 'center',
-        marginBottom: '2rem'
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '2rem'
       }}>
-        <Lobby gameState={gameState} isConnected={isConnected} />
+        {/* Show GameArea if in room, otherwise show Lobby */}
+        {gameState.isInRoom ? (
+          <GameArea
+            players={gameState.players}
+            currentPlayer={gameState.currentPlayer}
+            gameStatus={gameState.gameStatus}
+            onPaddleMove={gameState.movePaddle}
+            showDebug={import.meta.env.DEV}
+          />
+        ) : (
+          <Lobby gameState={gameState} isConnected={isConnected} />
+        )}
       </div>
 
       {/* Debug/Control Panel - Only show when connected */}
@@ -114,7 +127,8 @@ function App() {
           borderRadius: '8px',
           border: '1px solid #4b5563',
           width: '100%',
-          maxWidth: '600px'
+          maxWidth: '600px',
+          marginTop: '2rem'
         }}>
           <h4 style={{ margin: 0, color: '#9ca3af' }}>Debug Controls</h4>
           
@@ -170,6 +184,26 @@ function App() {
             >
               Send Ping
             </button>
+
+            {/* Leave Room Button - only show when in room */}
+            {gameState.isInRoom && (
+              <button
+                onClick={gameState.leaveRoom}
+                disabled={gameState.isLoading}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: gameState.isLoading ? '#6b7280' : '#f59e0b',
+                  color: 'white',
+                  cursor: gameState.isLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                {gameState.isLoading ? 'Leaving...' : 'Leave Room'}
+              </button>
+            )}
           </div>
 
           {/* Game State Debug Info */}
@@ -188,6 +222,13 @@ function App() {
                 <div>Players: {gameState.players.length}/2</div>
                 <div>Status: {gameState.gameStatus}</div>
                 <div>Current Player ID: {gameState.currentPlayer?.id}</div>
+                <div>Players Paddle Positions:</div>
+                {gameState.players.map((player, index) => (
+                  <div key={player.id} style={{ marginLeft: '1rem' }}>
+                    Player {index + 1}: Y={Math.round(player.paddleY)} 
+                    {player.id === gameState.currentPlayer?.id && ' (You)'}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -206,6 +247,9 @@ function App() {
           <p>
             Welcome to the Pong game! Connect to the server and join a room to start playing. 
             You can create a new room or join an existing one. Each room supports up to 2 players.
+          </p>
+          <p>
+            Once in a room, move your mouse over the game area to control your paddle!
           </p>
         </div>
       )}

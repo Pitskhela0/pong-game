@@ -16,6 +16,8 @@ export interface SocketServiceEvents {
   roomLeft: (data: any) => void;
   roomFull: (data: any) => void;
   roomError: (data: any) => void;
+  // Game events
+  paddleMoved: (data: any) => void;
 }
 
 export class SocketService {
@@ -296,6 +298,13 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       console.log('❌ Room error:', data);
       this.triggerEvent('roomError', data);
     });
+
+    // Game events
+    this.socket.on('paddle-moved', (data) => {
+      if (this.isDestroyed) return;
+      console.log('🏓 Paddle moved:', data);
+      this.triggerEvent('paddleMoved', data);
+    });
   }
 
   private setupEngineEvents(): void {
@@ -413,6 +422,17 @@ private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       this.socket.emit('leave-room');
     } else {
       console.warn('⚠️ Cannot leave room - not connected to server');
+    }
+  }
+
+  // Paddle movement method
+  movePaddle(paddleY: number): void {
+    if (this.isDestroyed) return;
+    
+    if (this.socket?.connected) {
+      this.socket.emit('paddle-move', { paddleY });
+    } else {
+      console.warn('⚠️ Cannot move paddle - not connected to server');
     }
   }
 }

@@ -56,6 +56,10 @@ export const useSocket = (serverUrl?: string): UseSocketReturn => {
       console.log('📉 Client count updated:', data.totalClients);
     });
 
+    socketService.on('paddleMoved', (data) => {
+      console.log('🏓 Paddle moved:', data);
+    });
+
     // Cleanup function - only runs when component actually unmounts
     return () => {
       console.log('🧹 useSocket cleanup - component unmounting');
